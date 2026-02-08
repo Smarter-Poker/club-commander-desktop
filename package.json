@@ -1,0 +1,66 @@
+{
+  "name": "club-commander",
+  "version": "1.0.0",
+  "description": "Club Commander - Poker Room Management Software",
+  "main": "main.js",
+  "author": "Smarter.Poker",
+  "license": "Proprietary",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "build:all": "electron-builder -mwl"
+  },
+  "build": {
+    "appId": "poker.smarter.clubcommander",
+    "productName": "Club Commander",
+    "copyright": "Copyright © 2026 Smarter.Poker",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "icon": "assets/icon.icns",
+      "target": ["dmg", "zip"],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": ["nsis", "portable"],
+      "publisherName": "Smarter.Poker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Club Commander"
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "target": ["AppImage", "deb"],
+      "category": "Office"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Smarter-Poker",
+      "repo": "club-commander-desktop"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.7"
+  },
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1"
+  }
+}
