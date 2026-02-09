@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "Club Commander - Poker Room Management Software",
   "main": "main.js",
-  "author": "Smarter.Poker",
+  "author": {
+    "name": "Smarter.Poker",
+    "email": "admin@smarter.poker"
+  },
   "license": "Proprietary",
   "scripts": {
     "start": "electron .",
@@ -57,7 +60,8 @@
         "AppImage",
         "deb"
       ],
-      "category": "Office"
+      "category": "Office",
+      "maintainer": "admin@smarter.poker"
     },
     "publish": {
       "provider": "github",
