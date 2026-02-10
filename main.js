@@ -7,7 +7,7 @@ let mainWindow;
 let tray;
 
 // Production URL
-const COMMANDER_URL = 'https://hub-vanguard-smarter-poker.vercel.app/commander';
+const COMMANDER_URL = 'https://smarter.poker/commander/login';
 
 // Auto-updater configuration
 autoUpdater.autoDownload = true;
