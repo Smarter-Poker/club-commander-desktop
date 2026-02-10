@@ -1,6 +1,6 @@
 {
   "name": "club-commander",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "description": "Club Commander - Poker Room Management Software",
   "main": "main.js",
   "author": {
@@ -31,7 +31,7 @@
     ],
     "mac": {
       "category": "public.app-category.business",
-      "icon": "assets/icon.icns",
+      "icon": "assets/icon.png",
       "target": [
         "dmg",
         "zip"
