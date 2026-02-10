@@ -7,7 +7,7 @@ let mainWindow;
 let tray;
 
 // Production URL
-const COMMANDER_URL = 'https://smarter.poker/commander/login';
+const COMMANDER_URL = 'https://smarter.poker/commander/register';
 
 // Auto-updater configuration
 autoUpdater.autoDownload = true;
