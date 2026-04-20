@@ -50,30 +50,45 @@ function repoRoot() {
 
 function resolveFiles(root, filenames) {
   const out = [];
+  const SUBDIRS = ["", "src", "renderer", "renderer/src", "server/src", "electron", "app"];
+  const EXTS = ['', '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
+  const INDEX_EXTS = ['.js', '.jsx', '.ts', '.tsx'];
+  const seen = new Set();
   for (const f of filenames) {
-    // Sentry filenames can be relative, absolute, or webpack-style
-    // (like "webpack-internal:///(app-pages)/src/components/Foo.tsx").
-    // Strip prefixes and try variants.
+    if (!f) continue;
+    // Strip framework / webpack prefixes Sentry emits.
     let clean = f
       .replace(/^webpack-internal:\/\/\//, '')
       .replace(/^webpack:\/\//, '')
       .replace(/^\(app-pages\)\//, '')
-      .replace(/^\.\//, '')
+      .replace(/^app:\/\/\//, '')
+      .replace(/^\/+/, '')
+      .replace(/^(\.\.?\/)+/, '')
       .split('?')[0];
-    const candidates = [
-      path.join(root, clean),
-      path.join(root, 'src', clean),
-      path.join(root, 'CA/src', clean),
-      path.join(root, 'server/src', clean),
-    ];
+    if (!clean || seen.has(clean)) continue;
+    seen.add(clean);
+    const hasExt = /\.[a-z0-9]+$/i.test(clean);
+    const base = hasExt ? clean.replace(/\.[a-z0-9]+$/i, '') : clean;
+    const candidates = [];
+    for (const sub of SUBDIRS) {
+      for (const ext of EXTS) {
+        if (ext === '' && !hasExt) continue;
+        candidates.push(path.join(root, sub, ext === '' ? clean : base + ext));
+      }
+      // `./foo` → `./foo/index.ts` etc.
+      for (const ext of INDEX_EXTS) {
+        candidates.push(path.join(root, sub, base, 'index' + ext));
+      }
+    }
+    let picked = null;
     for (const p of candidates) {
       try {
         const stat = fs.statSync(p);
-        if (stat.isFile() && stat.size < 200_000) {
-          out.push({ path: path.relative(root, p), content: fs.readFileSync(p, 'utf8') });
-          break;
-        }
+        if (stat.isFile() && stat.size < 200_000) { picked = p; break; }
       } catch {}
+    }
+    if (picked) {
+      out.push({ path: path.relative(root, picked), content: fs.readFileSync(picked, 'utf8') });
     }
   }
   return out;
