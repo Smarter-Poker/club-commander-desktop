@@ -1,0 +1,112 @@
+# ═════════════════════════════════════════════════════════════════════════
+# Sentry → Claude → PR auto-fix loop (Club Commander, Electron desktop)
+#
+# Phase 5.2.0 (dry-run): every dispatched issue results in a draft PR
+# labeled `sentry-autofix-draft`. A human reviews+merges. Once we've
+# observed enough correct fixes, Phase 5.2.2 will flip the auto-merge
+# flag for allowlist-only paths (renderer/** UI components).
+#
+# Triggered by repository_dispatch events fired by the Sentry-autofix
+# poller running on Hetzner (club-arena-engine, /opt/sentry-autofix-poller).
+# ═════════════════════════════════════════════════════════════════════════
+
+name: Sentry Autofix
+
+on:
+  repository_dispatch:
+    types: [sentry-autofix]
+  # Manual trigger for testing — pastes the client_payload fields as inputs.
+  workflow_dispatch:
+    inputs:
+      issue_id:
+        description: 'Sentry issue ID (numeric)'
+        required: true
+      sentry_project:
+        description: 'Sentry project slug'
+        required: true
+        default: 'javascript-react-3h'
+      attempt_id:
+        description: 'autofix_attempts.id (uuid) — optional for manual runs'
+        required: false
+      short_id:
+        description: 'Sentry short ID (e.g. JAVASCRIPT-REACT-3H-42)'
+        required: false
+      issue_title:
+        description: 'Issue title'
+        required: false
+      issue_level:
+        description: 'error | warning'
+        required: false
+        default: 'error'
+
+concurrency:
+  group: sentry-autofix-${{ github.event.client_payload.issue_id || github.event.inputs.issue_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  autofix:
+    name: Autofix Sentry issue
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SENTRY_ORG_SLUG: ${{ github.event.client_payload.sentry_org || 'smarter-software-inc' }}
+      SENTRY_PROJECT: ${{ github.event.client_payload.sentry_project || github.event.inputs.sentry_project }}
+      SENTRY_ISSUE_ID: ${{ github.event.client_payload.issue_id || github.event.inputs.issue_id }}
+      SENTRY_SHORT_ID: ${{ github.event.client_payload.short_id || github.event.inputs.short_id }}
+      SENTRY_ISSUE_TITLE: ${{ github.event.client_payload.issue_title || github.event.inputs.issue_title }}
+      SENTRY_ISSUE_LEVEL: ${{ github.event.client_payload.issue_level || github.event.inputs.issue_level }}
+      AUTOFIX_ATTEMPT_ID: ${{ github.event.client_payload.attempt_id || github.event.inputs.attempt_id }}
+      AUTOFIX_MODE: dry-run   # Phase 5.2.0 — never auto-merge
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_MODEL: claude-opus-4-6
+      GH_TOKEN: ${{ secrets.AUTOFIX_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Guard — only run on Club Commander's Sentry project
+        # Belt-and-suspenders: the poller filters by PROJECT_TO_REPO, but we
+        # also reject here so a misrouted dispatch can't rewrite Commander
+        # from a World Hub or Club Arena issue.
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sentry_project != 'javascript-react-3h' }}
+        run: |
+          echo "Rejected: project '${{ github.event.client_payload.sentry_project }}' is not javascript-react-3h (Club Commander)"
+          exit 2
+
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ env.GH_TOKEN }}
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/sentry-autofix/package-lock.json
+
+      - name: Install autofix runner deps
+        working-directory: scripts/sentry-autofix
+        run: npm ci --no-audit --no-fund
+
+      - name: Unit test policy + patch modules
+        working-directory: scripts/sentry-autofix
+        run: node --test policy.test.mjs patch.test.mjs
+
+      - name: Run autofix
+        id: run
+        working-directory: scripts/sentry-autofix
+        run: node run.mjs
+
+      - name: Mark attempt as errored on failure
+        if: failure() && env.AUTOFIX_ATTEMPT_ID != ''
+        working-directory: scripts/sentry-autofix
+        run: node mark-errored.mjs "${{ env.AUTOFIX_ATTEMPT_ID }}" "workflow step failed — see logs for run ${{ github.run_id }}"
+        continue-on-error: true

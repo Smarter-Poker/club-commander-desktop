@@ -1,0 +1,14 @@
+{
+  "name": "sentry-autofix-runner",
+  "private": true,
+  "version": "1.0.0",
+  "description": "GH Action runner — fetches Sentry issue, calls Claude, opens PR",
+  "type": "module",
+  "main": "run.mjs",
+  "scripts": {
+    "test": "node --test *.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}
