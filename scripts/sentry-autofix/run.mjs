@@ -155,7 +155,7 @@ async function main() {
 
   // Apply patch.
   let changed;
-  try { changed = applyPatch(root, parsed.patch); }
+  try { changed = applyPatch(root, parsed.filesUpdated); }
   catch (err) {
     log({ level: 'error', msg: 'apply failed', err: String(err).slice(0, 500) });
     await updateAttempt(attemptId, { status: 'errored', error_message: `apply: ${err.message}`.slice(0, 500), claude_tokens_in: reply.usage?.input_tokens, claude_tokens_out: reply.usage?.output_tokens });

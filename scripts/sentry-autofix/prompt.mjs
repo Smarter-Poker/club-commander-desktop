@@ -61,12 +61,14 @@ Response format — REQUIRED, any deviation is a failure:
 2–4 sentences. Root cause + what the patch changes + why.
 </explanation>
 
-<patch>
-[A single unified diff suitable for 'git apply' from the repo root.
- Use standard diff format: "diff --git a/PATH b/PATH" headers,
- "--- a/PATH", "+++ b/PATH", "@@ hunk @@" markers. Nothing else in
- this block.]
-</patch>
+<files_updated>
+[
+  {
+    "path": "relative/path/from/repo/root.ext",
+    "content": "ENTIRE NEW FILE CONTENTS — every line. Not a diff. Not a partial.\\nJSON-escape special chars. Use \\\\n for line breaks inside the JSON string."
+  }
+]
+</files_updated>
 
 <test_note>
 One sentence naming the test you added/updated and what it guards
@@ -76,6 +78,14 @@ against. Or "none-possible" with reason.
 <confidence>
 A single word: high | medium | low.
 </confidence>
+
+Rules for the <files_updated> block:
+- You MUST return the ENTIRE file content, not a diff.
+- Include EVERY line — imports, comments, exports — exactly as the final file should look.
+- If you changed 3 lines in a 200-line file, you still return all 200 lines with those 3 changes applied.
+- JSON must be valid — escape all backslashes (\\\\), quotes (\\"), and newlines (\\n) inside string values.
+- Only include files you are actually changing. Do not list files you only read.
+- At least 1 file must be present. Multiple files are fine.
 `;
 
 /**
