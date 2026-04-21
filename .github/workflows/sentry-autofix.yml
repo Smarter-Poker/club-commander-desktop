@@ -98,7 +98,7 @@ jobs:
 
       - name: Unit test policy + patch modules
         working-directory: scripts/sentry-autofix
-        run: node --test policy.test.mjs patch.test.mjs
+        run: node --test policy.test.mjs patch.test.mjs fetch-issue.test.mjs resolve.test.mjs
 
       - name: Run autofix
         id: run
