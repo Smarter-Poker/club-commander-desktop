@@ -86,6 +86,25 @@ async function main() {
   log({ level: 'info', msg: 'autofix start', issueId, attemptId, mode, model, root, repo: repoEnv });
 
   await updateAttempt(attemptId, { status: 'running', run_id: process.env.GITHUB_RUN_ID || null });
+  // --- Daily spend circuit breaker ------------------------------------
+  // Supabase RPC backed — halts new Claude calls once we hit ~$48/mo
+  // equivalent ($1.60/day default). Cannot be circumvented by env-var
+  // ANTHROPIC_MODEL swaps because it checks actual tokens-consumed today.
+  try {
+    const sb = getSupabase();
+    const { data: exhausted, error: budgetErr } = await sb.rpc('autofix_budget_exhausted');
+    if (budgetErr) {
+      log({ level: 'warn', msg: 'budget check failed — proceeding', err: budgetErr.message });
+    } else if (exhausted === true) {
+      log({ level: 'warn', msg: 'daily budget cap hit — skipping' });
+      await updateAttempt(attemptId, { status: 'skipped_unfixable', error_message: 'daily_budget_cap_hit' });
+      return;
+    }
+  } catch (e) {
+    log({ level: 'warn', msg: 'budget check threw — proceeding', err: String(e) });
+  }
+  // --------------------------------------------------------------------
+
 
   const issue = await fetchIssue(issueId);
   const event = await fetchLatestEvent(issueId);
