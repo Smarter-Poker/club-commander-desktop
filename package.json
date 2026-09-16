@@ -14,12 +14,17 @@
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
-    "build:all": "electron-builder -mwl"
+    "build:all": "electron-builder -mwl",
+    "prebuild": "node scripts/verify-retired-telemetry.cjs",
+    "prebuild:win": "node scripts/verify-retired-telemetry.cjs",
+    "prebuild:mac": "node scripts/verify-retired-telemetry.cjs",
+    "prebuild:linux": "node scripts/verify-retired-telemetry.cjs",
+    "prebuild:all": "node scripts/verify-retired-telemetry.cjs"
   },
   "build": {
     "appId": "poker.smarter.clubcommander",
     "productName": "Club Commander",
-    "copyright": "Copyright © 2026 Smarter.Poker",
+    "copyright": "Copyright \u00a9 2026 Smarter.Poker",
     "directories": {
       "output": "dist"
     },
