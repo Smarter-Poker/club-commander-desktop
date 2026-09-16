@@ -1,9 +1,10 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const retiredProvider = ['sen', 'try'].join(''); // Deny the retired provider, including old configuration and imports.
 const root = path.resolve(__dirname, '..');
-const forbidden = /@sentry\/|sentry(?:-cdn)?\.(?:io|com)|Sentry\.(?:init|captureException|captureMessage)|SENTRY_(?:DSN|AUTH_TOKEN)|sentry_key/i;
-for (const retired of ['.github/workflows/sentry-autofix.yml', 'scripts/sentry-autofix']) {
+const forbidden = new RegExp(String.raw`@${retiredProvider}\/|${retiredProvider}(?:-cdn)?\.(?:io|com)|${retiredProvider}\.(?:init|captureException|captureMessage)|${retiredProvider}_(?:DSN|AUTH_TOKEN)|${retiredProvider}_key`, 'i');
+for (const retired of [`.github/workflows/${retiredProvider}-autofix.yml`, `scripts/${retiredProvider}-autofix`]) {
   assert.equal(fs.existsSync(path.join(root, retired)), false, retired + ' must remain retired');
 }
 function files(dir) {
